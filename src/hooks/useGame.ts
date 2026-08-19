@@ -30,41 +30,21 @@ export function useGame(allMemes: Meme[]) {
     selectorRef.current = new MemeSelector(allMemes.map((m) => m.id));
   }, [allMemes]);
 
-  const startGame = useCallback(
-    (playerName: string) => {
-      if (allMemes.length === 0) {
-        console.error('No memes loaded');
-        return;
-      }
-      const memeId = selectorRef.current.next(lastMemeIdRef.current);
-      if (!memeId) {
-        console.error('No meme ID from selector');
-        return;
-      }
-      lastMemeIdRef.current = memeId;
-      const meme = allMemes.find((m) => m.id === memeId);
-      if (!meme) {
-        console.error('Meme not found:', memeId);
-        return;
-      }
+  const startGame = useCallback((playerName: string) => {
+    if (allMemes.length === 0) {
+      console.error('No memes loaded');
+      return;
+    }
+    dispatch({
+      type: 'START_GAME',
+      playerId: crypto.randomUUID(),
+      playerName,
+    });
+  }, [allMemes]);
 
-      scorerRef.current = new PoseScorer(
-        meme.referencePoses.map((p) => p.landmarks),
-        GAME_CONFIG.SCORE_SMOOTHING_ALPHA
-      );
-      liveScoreRef.current = 0;
-      startTimeRef.current = null;
-
-      dispatch({
-        type: 'START_GAME',
-        playerId: crypto.randomUUID(),
-        playerName,
-        meme,
-      });
-    },
-    [allMemes]
-  );
-
+  const selectMeme = useCallback((meme: Meme) => {
+    dispatch({ type: 'SELECT_MEME', meme });
+  }, []);
   // processFrame – only updates score
   const processFrame = useCallback((landmarks: LandmarkList | null) => {
     if (gameStateRef.current !== 'PLAYING') return;
@@ -142,21 +122,32 @@ export function useGame(allMemes: Meme[]) {
     liveScoreRef.current = 0;
   }, []);
 
-const saveResult = useCallback(
-  async (finalScore: number) => {
-    if (!state.playerId || !state.currentMeme) {
-      console.error('Missing player or meme');
-      return;
-    }
-    try {
-      const { error } = await dbSave(
-        state.playerId,
-        state.playerName,
-        state.currentMeme.id,
-        finalScore
-      );
-      if (error) {
-        // Queue locally
+  const saveResult = useCallback(
+    async (finalScore: number) => {
+      if (!state.playerId || !state.currentMeme) {
+        console.error('Missing player or meme');
+        return;
+      }
+      try {
+        const { error } = await dbSave(
+          state.playerId,
+          state.playerName,
+          state.currentMeme.id,
+          finalScore
+        );
+        if (error) {
+          // Queue locally
+          enqueueResult({
+            playerId: state.playerId,
+            playerName: state.playerName,
+            memeId: state.currentMeme.id,
+            score: finalScore,
+            timestamp: Date.now(),
+          });
+          console.warn('Saved to offline queue:', error);
+        }
+      } catch (err) {
+        // Fallback to queue
         enqueueResult({
           playerId: state.playerId,
           playerName: state.playerName,
@@ -164,24 +155,13 @@ const saveResult = useCallback(
           score: finalScore,
           timestamp: Date.now(),
         });
-        console.warn('Saved to offline queue:', error);
+        console.warn('Network error, queued locally');
       }
-    } catch (err) {
-      // Fallback to queue
-      enqueueResult({
-        playerId: state.playerId,
-        playerName: state.playerName,
-        memeId: state.currentMeme.id,
-        score: finalScore,
-        timestamp: Date.now(),
-      });
-      console.warn('Network error, queued locally');
-    }
-    // Always go back to IDLE
-    dispatch({ type: 'SAVE_COMPLETE' });
-  },
-  [state.playerId, state.playerName, state.currentMeme]
-);
+      // Always go back to IDLE
+      dispatch({ type: 'SAVE_COMPLETE' });
+    },
+    [state.playerId, state.playerName, state.currentMeme]
+  );
 
-  return { state, startGame, processFrame, resetGame, saveResult };
+  return { state, startGame, processFrame, resetGame, saveResult, selectMeme };
 }

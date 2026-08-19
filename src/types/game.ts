@@ -3,6 +3,7 @@ import type { Meme } from './meme';
 
 export type GameState =
   | 'IDLE'
+  | 'WHEEL'  
   | 'COUNTDOWN'
   | 'PLAYING'
   | 'FINISHED'

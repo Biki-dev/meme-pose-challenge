@@ -4,7 +4,8 @@ import type { Meme } from '../types/meme';
 import { GAME_CONFIG } from './gameConfig';
 
 export type GameAction =
-  | { type: 'START_GAME'; playerId: string; playerName: string; meme: Meme }
+  | { type: 'START_GAME'; playerId: string; playerName: string }
+  | { type: 'SELECT_MEME'; meme: Meme }
   | { type: 'COUNTDOWN_TICK'; value: number | 'GO' }
   | { type: 'TIME_TICK'; timeLeftMs: number }
   | { type: 'SCORE_UPDATE'; liveScore: number }
@@ -31,15 +32,26 @@ export function gameReducer(state: GameContext, action: GameAction): GameContext
     case 'START_GAME':
       return {
         ...state,
-        state: 'COUNTDOWN',
+        state: 'WHEEL',
         playerId: action.playerId,
         playerName: action.playerName,
+        currentMeme: null,
+        countdownValue: null,
+        timeLeftMs: GAME_CONFIG.ROUND_DURATION_MS,
+        finalScore: null,
+        liveScore: 0,
+        errorMessage: null,
+        _startTime: null,
+      };
+    case 'SELECT_MEME':
+      return {
+        ...state,
+        state: 'COUNTDOWN',
         currentMeme: action.meme,
         countdownValue: 3,
         timeLeftMs: GAME_CONFIG.ROUND_DURATION_MS,
         finalScore: null,
         liveScore: 0,
-        errorMessage: null,
         _startTime: null,
       };
 

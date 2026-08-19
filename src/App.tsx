@@ -7,6 +7,7 @@ import { preloadAllMemes } from './data/memePreloader';
 import type { Meme } from './types/meme';
 import type { LandmarkList } from './types/pose';
 import { Leaderboard } from './components/Leaderboard';
+import { Wheel } from './components/Wheel';
 
 function App() {
   const [memes, setMemes] = useState<Meme[]>([]);
@@ -16,8 +17,8 @@ function App() {
     preloadAllMemes().then(setMemes);
   }, []);
 
-  const { state, startGame, processFrame, resetGame, saveResult } = useGame(memes);
-
+  const { state, startGame, processFrame, resetGame, saveResult, selectMeme } = useGame(memes);
+  
   const handleLandmarks = useCallback(
     (landmarks: LandmarkList | null) => {
       processFrame(landmarks);
@@ -64,7 +65,14 @@ function App() {
             </button>
           </div>
         );
-
+      case 'WHEEL':
+        return (
+          <div style={{ textAlign: 'center', padding: '1rem' }}>
+            <h2 style={{ margin: '0 0 0.5rem 0' }}>🎡 Spin the Wheel, {state.playerName}!</h2>
+            <p style={{ color: '#aaa', marginBottom: '1rem' }}>The meme you land on will be your challenge.</p>
+            <Wheel memes={memes} onSelect={selectMeme} />
+          </div>
+        );
       case 'COUNTDOWN':
         return (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -174,8 +182,8 @@ function App() {
           }}
         >
           <div style={{ marginTop: '1rem', borderTop: '1px solid #333', paddingTop: '1rem' }}>
-  <Leaderboard limit={10} />
-</div>
+            <Leaderboard limit={10} />
+          </div>
           {/* Meme video – shown during COUNTDOWN and PLAYING */}
           {(state.state === 'COUNTDOWN' || state.state === 'PLAYING') && state.currentMeme && (
             <div style={{ textAlign: 'center' }}>
