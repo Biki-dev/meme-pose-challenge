@@ -1,212 +1,108 @@
-// src/App.tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { CameraView } from './components/CameraView';
 import { MemeVideo } from './components/MemeVideo';
-import { useGame } from './hooks/useGame';
-import { preloadAllMemes } from './data/memePreloader';
-import type { Meme } from './types/meme';
-import type { LandmarkList } from './types/pose';
 import { Leaderboard } from './components/Leaderboard';
 import { Wheel } from './components/Wheel';
+import { preloadAllMemes } from './data/memePreloader';
+import { useGame } from './hooks/useGame';
+import type { Meme } from './types/meme';
+import type { LandmarkList } from './types/pose';
+import './App.css';
 
 function App() {
   const [memes, setMemes] = useState<Meme[]>([]);
   const [playerNameInput, setPlayerNameInput] = useState('');
+  const { state, startGame, processFrame, resetGame, saveResult, selectMeme } = useGame(memes);
 
   useEffect(() => {
     preloadAllMemes().then(setMemes);
   }, []);
 
-  const { state, startGame, processFrame, resetGame, saveResult, selectMeme } = useGame(memes);
-  
-  const handleLandmarks = useCallback(
-    (landmarks: LandmarkList | null) => {
-      processFrame(landmarks);
-    },
-    [processFrame]
-  );
+  const handleLandmarks = useCallback((landmarks: LandmarkList | null) => processFrame(landmarks), [processFrame]);
 
   const handleStart = () => {
-    if (!playerNameInput.trim()) {
-      alert('Please enter your name');
-      return;
-    }
-    if (memes.length === 0) {
-      alert('Memes still loading, please wait...');
-      return;
-    }
+    if (!playerNameInput.trim()) return;
+    if (memes.length === 0) return;
     startGame(playerNameInput.trim());
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleStart();
-  };
-
-  const renderContent = () => {
+  const renderGameState = () => {
     switch (state.state) {
       case 'IDLE':
         return (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <h2>Enter Your Name</h2>
-            <input
-              type="text"
-              value={playerNameInput}
-              onChange={(e) => setPlayerNameInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Your name…"
-              style={{ padding: '0.5rem', fontSize: '1.2rem', marginRight: '1rem' }}
-            />
-            <button
-              onClick={handleStart}
-              disabled={memes.length === 0}
-              style={{ padding: '0.5rem 2rem', fontSize: '1.2rem' }}
-            >
-              {memes.length === 0 ? 'Loading…' : 'Start Challenge!'}
-            </button>
-          </div>
+          <section className="state-panel intro-panel">
+            <div className="eyebrow">Ready when you are</div>
+            <h2>Make the internet’s face.</h2>
+            <p className="muted">Pick a name, spin the deck, then match the pose before the clock taps out.</p>
+            <div className="name-form">
+              <label htmlFor="player-name">Your player tag</label>
+              <div className="input-row">
+                <input id="player-name" value={playerNameInput} onChange={(e) => setPlayerNameInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleStart()} placeholder="e.g. poseboss" maxLength={18} />
+                <button className="button button-lime" onClick={handleStart} disabled={!playerNameInput.trim() || memes.length === 0}>{memes.length === 0 ? 'Loading deck' : 'Enter arena'}</button>
+              </div>
+            </div>
+            <div className="micro-stats"><span><b>{memes.length || '—'}</b> poses in deck</span><span><b>10 sec</b> per round</span><span><b>∞</b> ways to flail</span></div>
+          </section>
         );
       case 'WHEEL':
         return (
-          <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <h2 style={{ margin: '0 0 0.5rem 0' }}>🎡 Spin the Wheel, {state.playerName}!</h2>
-            <p style={{ color: '#aaa', marginBottom: '1rem' }}>The meme you land on will be your challenge.</p>
+          <section className="state-panel wheel-panel">
+            <div className="eyebrow">Round one · {state.playerName}</div>
+            <h2>Choose your chaos.</h2>
+            <p className="muted">The wheel decides what your camera sees next.</p>
             <Wheel memes={memes} onSelect={selectMeme} />
-          </div>
+          </section>
         );
       case 'COUNTDOWN':
         return (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <h1 style={{ fontSize: '4rem' }}>{state.countdownValue}</h1>
-            <p>Get ready!</p>
-          </div>
+          <section className="state-panel countdown-panel">
+            <div className="eyebrow">Lock in your stance</div>
+            <div className="countdown-number">{state.countdownValue}</div>
+            <h2>Find the frame.</h2>
+            <p className="muted">Your best angle is probably closer than you think.</p>
+          </section>
         );
-
       case 'PLAYING':
         return (
-          <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <div style={{ fontSize: '2rem' }}>⏱ {(state.timeLeftMs / 1000).toFixed(1)}s</div>
-            <div style={{ fontSize: '2rem', color: '#00e5ff' }}>
-              Score: {Math.round(state.liveScore)}%
-            </div>
-            <div
-              style={{
-                width: '80%',
-                height: '20px',
-                background: '#333',
-                borderRadius: '10px',
-                margin: '1rem auto',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  width: `${Math.min(100, state.liveScore)}%`,
-                  height: '100%',
-                  background: '#00e5ff',
-                  transition: 'width 0.1s',
-                }}
-              />
-            </div>
-            <p style={{ color: '#aaa' }}>Strike the pose!</p>
-            {state.currentMeme && (
-              <p style={{ color: '#888', fontSize: '0.9rem' }}>🎭 {state.currentMeme.title}</p>
-            )}
-          </div>
+          <section className="state-panel playing-panel">
+            <div className="play-topline"><div><div className="eyebrow">Live match</div><h2>Hold that energy.</h2></div><div className="timer"><span>TIME</span>{(state.timeLeftMs / 1000).toFixed(1)}<small>s</small></div></div>
+            <div className="score-readout"><span>POSE MATCH</span><strong>{Math.round(state.liveScore)}<small>%</small></strong></div>
+            <div className="score-track"><div className="score-fill" style={{ width: `${Math.min(100, state.liveScore)}%` }} /></div>
+            <div className="play-hint"><span className="pulse-dot" /> Match the reference. Make it yours.</div>
+            {state.currentMeme && <div className="current-meme"><span>NOW PLAYING</span><strong>{state.currentMeme.title}</strong></div>}
+          </section>
         );
-
       case 'RESULT':
         return (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <h1 style={{ fontSize: '4rem', color: '#ff2e88' }}>{state.finalScore}%</h1>
-            <p style={{ fontSize: '1.5rem' }}>Great effort, {state.playerName}!</p>
-            <button
-              onClick={() => saveResult(state.finalScore!)}
-              style={{ padding: '0.5rem 2rem', fontSize: '1.2rem', marginTop: '1rem' }}
-            >
-              Save &amp; Next
-            </button>
-          </div>
+          <section className="state-panel result-panel">
+            <div className="eyebrow">Round complete</div>
+            <div className="result-score">{state.finalScore}<small>%</small></div>
+            <h2>That was a moment, {state.playerName}.</h2>
+            <p className="muted">Save your score and see how it stacks up.</p>
+            <button className="button button-lime full-button" onClick={() => saveResult(state.finalScore!)}>Save score &amp; play again</button>
+          </section>
         );
-
       case 'ERROR':
-        return (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <h2>⚠️ Error</h2>
-            <p>{state.errorMessage}</p>
-            <button onClick={resetGame}>Retry</button>
-          </div>
-        );
-
+        return <section className="state-panel error-panel"><div className="eyebrow">Signal lost</div><h2>Something got in the way.</h2><p className="muted">{state.errorMessage}</p><button className="button button-outline" onClick={resetGame}>Try again</button></section>;
       default:
-        return <div>Loading…</div>;
+        return <section className="state-panel"><div className="eyebrow">Loading</div><h2>Warming up the room…</h2></section>;
     }
   };
 
+  const liveRound = state.state === 'COUNTDOWN' || state.state === 'PLAYING';
+
   return (
-    <div
-      style={{
-        background: '#0a0a0f',
-        color: 'white',
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '1rem',
-      }}
-    >
-      <h1>🎮 Meme Pose Challenge</h1>
-      <div
-        style={{
-          display: 'flex',
-          gap: '2rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          width: '100%',
-          maxWidth: '1200px',
-        }}
-      >
-        {/* Left: Camera view */}
-        <CameraView onLandmarks={handleLandmarks} />
-
-        {/* Right: Game UI + Meme Video */}
-        <div
-          style={{
-            flex: '1',
-            minWidth: '300px',
-            background: '#1a1a2e',
-            padding: '1rem',
-            borderRadius: '12px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
-          }}
-        >
-          <div style={{ marginTop: '1rem', borderTop: '1px solid #333', paddingTop: '1rem' }}>
-            <Leaderboard limit={10} />
-          </div>
-          {/* Meme video – shown during COUNTDOWN and PLAYING */}
-          {(state.state === 'COUNTDOWN' || state.state === 'PLAYING') && state.currentMeme && (
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ margin: '0 0 0.5rem 0', color: '#aaa' }}>👀 Strike this pose:</p>
-              <MemeVideo
-                videoUrl={state.currentMeme.videoUrl}
-                isPlaying={state.state === 'PLAYING' || state.state === 'COUNTDOWN'}
-              />
-            </div>
-          )}
-
-          {/* Game state UI */}
-          {renderContent()}
-
-          {/* Leaderboard placeholder – will be replaced with real leaderboard in Phase 6/7 */}
-          <div style={{ marginTop: '1rem', borderTop: '1px solid #333', paddingTop: '1rem' }}>
-            <h3>🏆 Leaderboard</h3>
-            <p style={{ color: '#666' }}>(Coming soon)</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <main className="app-shell">
+      <header className="topbar"><div className="brand"><span className="brand-mark">MP</span><span className="brand-name">meme pose<span> / </span>challenge</span></div><div className="topbar-meta"><span className="live-chip"><i /> CAMERA READY</span><span className="round-label">SEASON 01 <b>·</b> TAKE 004</span></div></header>
+      <section className="hero-row"><div><p className="kicker">A social warm-up for your frontal lobe</p><h1>Own the<br /><em>reference.</em></h1></div><div className="hero-note"><span>01—</span><p>A tiny game about big commitment.<br />No rhythm required. Just nerve.</p></div></section>
+      <section className="arena-grid">
+        <div className="camera-card"><div className="card-label"><span>01 / YOUR CAMERA</span><span className="signal"><i /> LIVE FEED</span></div><div className="camera-frame"><CameraView onLandmarks={handleLandmarks} /><div className="camera-corner camera-corner-tl" /><div className="camera-corner camera-corner-br" /><div className="camera-caption">MIRROR MODE <span>·</span> POSE TRACKING</div></div></div>
+        <aside className="game-column"><div className="control-card"><div className="card-label"><span>02 / GAME CONTROL</span><span className="round-badge">{liveRound ? 'IN PLAY' : state.state}</span></div>{liveRound && state.currentMeme && <div className="reference-card"><div className="reference-heading"><span>REFERENCE FRAME</span><span>⟷</span></div><MemeVideo videoUrl={state.currentMeme.videoUrl} isPlaying /><div className="reference-title">{state.currentMeme.title}</div></div>}{renderGameState()}</div><div className="leaderboard-card"><div className="card-label"><span>03 / THE BOARD</span><span>TOP 10</span></div><Leaderboard limit={10} /></div></aside>
+      </section>
+      <footer className="footer"><span>BUILT FOR BAD POSES &amp; GOOD STORIES</span><span>PRESS PLAY. LOOK ALIVE.</span></footer>
+    </main>
   );
 }
 
 export default App;
+
