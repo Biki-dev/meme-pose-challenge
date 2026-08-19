@@ -15,6 +15,16 @@ export const MEME_LIST: Omit<Meme, 'referencePoses'>[] = [
     title: 'Meme 1',
     videoUrl: '/memes/meme-01.mp4',
   },
+  {
+    id: 'meme-02',
+    title: 'Meme 2',
+    videoUrl: '/memes/meme-02.mp4',
+  },
+  {
+    id: 'meme-03',
+    title: 'Meme 3',
+    videoUrl: '/memes/meme-03.mp4',
+  },
   // Add more memes here
 ];
 
