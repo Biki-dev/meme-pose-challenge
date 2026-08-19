@@ -1,40 +1,43 @@
-// src/scoring/smoothing.ts
-
+// Directional score smoothing: good matches build score, poor matches drain it.
 export class BestPoseTracker {
-  private alpha: number;              // smoothing factor (0..1)
+  private readonly riseAlpha: number;
+  private readonly fallAlpha: number;
   private stableScore: number | null = null;
-  private bestScore: number = 0;
+  private bestScore = 0;
 
-  constructor(alpha: number = 0.3) {
-    this.alpha = alpha;
+  constructor(riseAlpha = 0.22, fallAlpha = 0.5) {
+    this.riseAlpha = Math.max(0, Math.min(1, riseAlpha));
+    this.fallAlpha = Math.max(0, Math.min(1, fallAlpha));
   }
 
-  /**
-   * Add a raw score from a valid frame.
-   * If no stable score yet, initialise with raw.
-   */
   addSample(rawScore: number): void {
+    const nextScore = Math.max(0, Math.min(100, rawScore));
+
     if (this.stableScore === null) {
-      this.stableScore = rawScore;
+      this.stableScore = nextScore;
     } else {
-      this.stableScore = this.alpha * rawScore + (1 - this.alpha) * this.stableScore;
+      // Use a stronger fall response so leaving the pose is immediately visible.
+      const alpha = nextScore >= this.stableScore ? this.riseAlpha : this.fallAlpha;
+      this.stableScore += alpha * (nextScore - this.stableScore);
     }
-    if (this.stableScore > this.bestScore) {
-      this.bestScore = this.stableScore;
-    }
+
+    this.stableScore = Math.max(0, Math.min(100, this.stableScore));
+    this.bestScore = Math.max(this.bestScore, this.stableScore);
   }
 
-  /** Current smoothed score (for live meter). */
   getCurrentStableScore(): number {
     return this.stableScore ?? 0;
   }
 
-  /** Best stable score observed so far. */
+  // Final score reflects the score at the end of the round, not the historical peak.
+  getFinalScore(): number {
+    return this.stableScore ?? 0;
+  }
+
   getBestScore(): number {
     return this.bestScore;
   }
 
-  /** Reset for a new round. */
   reset(): void {
     this.stableScore = null;
     this.bestScore = 0;
