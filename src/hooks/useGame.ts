@@ -29,7 +29,16 @@ export function useGame(allMemes: Meme[]) {
   useEffect(() => {
     selectorRef.current = new MemeSelector(allMemes.map((m) => m.id));
   }, [allMemes]);
-
+  useEffect(() => {
+    if (state.currentMeme) {
+      scorerRef.current = new PoseScorer(
+        state.currentMeme.referencePoses.map((p) => p.landmarks),
+        GAME_CONFIG.SCORE_SMOOTHING_ALPHA
+      );
+    } else {
+      scorerRef.current = null;
+    }
+  }, [state.currentMeme]);
   const startGame = useCallback((playerName: string) => {
     if (allMemes.length === 0) {
       console.error('No memes loaded');
