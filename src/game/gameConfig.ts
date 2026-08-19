@@ -1,0 +1,7 @@
+// src/game/gameConfig.ts
+export const GAME_CONFIG = {
+  ROUND_DURATION_MS: 10000, // 10 seconds
+  COUNTDOWN_DURATION_MS: 3000, // 3 seconds (3-2-1-GO)
+  SCORE_SMOOTHING_ALPHA: 0.3,
+  LEADERBOARD_POLL_INTERVAL_MS: 5000,
+};

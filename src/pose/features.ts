@@ -52,9 +52,12 @@ function boneDirection(from: NormalizedLandmark, to: NormalizedLandmark): { x: n
 
 export function extractFeatures(landmarks: LandmarkList): PoseFeatures | null {
   if (!landmarks || landmarks.length < 33) return null;
-  // Ensure all required landmarks are visible
-  const required = new Set([11,12,13,14,15,16,23,24,25,26,27,28]);
-  for (const idx of required) {
+
+  // Require only shoulders — arms and upper body are always the key for meme poses.
+  // Lower-body landmarks (knees, ankles) are optional: if invisible (upper-body shot)
+  // those joints simply contribute 0 to the score rather than nullifying everything.
+  const coreRequired = [11, 12]; // left & right shoulder
+  for (const idx of coreRequired) {
     if (!landmarks[idx] || landmarks[idx].visibility < 0.5) return null;
   }
 

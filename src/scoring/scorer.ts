@@ -6,7 +6,13 @@ import { BestPoseTracker } from './smoothing';
 
 export class PoseScorer {
   private tracker: BestPoseTracker;
-  private refPoses: LandmarkList[];   // already normalised
+  /**
+   * Reference poses as stored in the JSON produced by extract_poses.py.
+   * They are ALREADY normalised (hip-centred, shoulder-width scaled),
+   * so we must NOT re-normalise them — only the live camera frame needs
+   * normalisation before comparison.
+   */
+  private refPoses: LandmarkList[];
 
   constructor(refPoses: LandmarkList[], smoothingAlpha: number = 0.3) {
     this.refPoses = refPoses;
@@ -14,26 +20,26 @@ export class PoseScorer {
   }
 
   /**
-   * Process a raw frame (un-normalised landmarks).
-   * Returns the current stable score (for live UI) and updates internal tracker.
-   * Returns null if frame invalid.
+   * Process a raw camera frame (un-normalised MediaPipe landmarks 0..1).
+   * Returns the current smoothed score (0-100) for the live UI.
+   * Returns null if the frame cannot be normalised (body not detected).
    */
   processFrame(rawLandmarks: LandmarkList): number | null {
     const norm = normalizeLandmarks(rawLandmarks);
     if (!norm) return null;
 
-    // Compute best match against all reference poses
+    // Compare the normalised live pose against pre-normalised reference poses
     const rawScore = computeBestMatch(norm, this.refPoses);
     this.tracker.addSample(rawScore);
     return this.tracker.getCurrentStableScore();
   }
 
-  /** Get final best score at round end. */
+  /** Get final best score at round end (0-100, rounded). */
   getFinalScore(): number {
     return Math.round(this.tracker.getBestScore());
   }
 
-  /** Reset tracker for new round. */
+  /** Reset tracker for a new round. */
   reset(): void {
     this.tracker.reset();
   }
