@@ -6,7 +6,7 @@ interface LeaderboardProps {
   limit?: number;
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ limit = 10 }) => {
+export const Leaderboard: React.FC<LeaderboardProps> = ({ limit = 100 }) => {
   const { entries, loading } = useLeaderboard(limit);
   const prevEntriesRef = useRef<typeof entries>([]);
 
@@ -50,13 +50,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ limit = 10 }) => {
                 }}
               >
                 <span>
-                  <span style={{ fontWeight: 'bold', color: rank === 1 ? '#ffd700' : '#aaa' }}>
+                  <span style={{ fontWeight: 'bold', color: rank === 1 ? '#ad8824' : '#4b4545' }}>
                     #{rank}
                   </span>
                   {' '}
-                  <span style={{ color: '#fff' }}>{entry.player_name}</span>
+                  <span style={{ color: '#58814a' }}>{entry.player_name}</span>
                 </span>
-                <span style={{ color: '#00e5ff', fontWeight: 'bold' }}>{entry.score}%</span>
+                <span style={{ color: '#000', fontWeight: 'bold' }}>{entry.score}%</span>
               </li>
             );
           })}

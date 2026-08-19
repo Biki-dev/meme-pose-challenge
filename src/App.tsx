@@ -93,13 +93,19 @@ function App() {
 
   return (
     <main className="app-shell">
-      <header className="topbar"><div className="brand"><span className="brand-mark">MP</span><span className="brand-name">meme pose<span> / </span>challenge</span></div><div className="topbar-meta"><span className="live-chip"><i /> CAMERA READY</span><span className="round-label">SEASON 01 <b>·</b> TAKE 004</span></div></header>
-      <section className="hero-row"><div><p className="kicker">A social warm-up for your frontal lobe</p><h1>Own the<br /><em>reference.</em></h1></div><div className="hero-note"><span>01—</span><p>A tiny game about big commitment.<br />No rhythm required. Just nerve.</p></div></section>
-      <section className="arena-grid">
+      <header className="topbar">
+        <div className="brand">
+          <img
+            src="https://res.cloudinary.com/dnmobechs/image/upload/f_auto,q_auto/v1786978432/ISTE_1_dtam0y.png"
+            alt="ISTE logo"
+            style={{ height: '32px', width: 'auto', display: 'block' }}
+          />
+          <span className="brand-name">ISTE meme pose<span> / </span>challenge</span>
+        </div>
+      </header>  <section className="arena-grid">
         <div className="camera-card"><div className="card-label"><span>01 / YOUR CAMERA</span><span className="signal"><i /> LIVE FEED</span></div><div className="camera-frame"><CameraView onLandmarks={handleLandmarks} /><div className="camera-corner camera-corner-tl" /><div className="camera-corner camera-corner-br" /><div className="camera-caption">MIRROR MODE <span>·</span> POSE TRACKING</div></div></div>
-        <aside className="game-column"><div className="control-card"><div className="card-label"><span>02 / GAME CONTROL</span><span className="round-badge">{liveRound ? 'IN PLAY' : state.state}</span></div>{liveRound && state.currentMeme && <div className="reference-card"><div className="reference-heading"><span>REFERENCE FRAME</span><span>⟷</span></div><MemeVideo videoUrl={state.currentMeme.videoUrl} isPlaying /><div className="reference-title">{state.currentMeme.title}</div></div>}{renderGameState()}</div><div className="leaderboard-card"><div className="card-label"><span>03 / THE BOARD</span><span>TOP 10</span></div><Leaderboard limit={10} /></div></aside>
+        <aside className="game-column"><div className="control-card"><div className="card-label"><span>02 / GAME CONTROL</span><span className="round-badge">{liveRound ? 'IN PLAY' : state.state}</span></div>{liveRound && state.currentMeme && <div className="reference-card"><div className="reference-heading"><span>REFERENCE FRAME</span><span>⟷</span></div><MemeVideo videoUrl={state.currentMeme.videoUrl} isPlaying /><div className="reference-title">{state.currentMeme.title}</div></div>}{renderGameState()}</div><div className="leaderboard-card"><div className="card-label"><span>03 / THE BOARD</span><span>TOP 100</span></div><Leaderboard limit={10} /></div></aside>
       </section>
-      <footer className="footer"><span>BUILT FOR BAD POSES &amp; GOOD STORIES</span><span>PRESS PLAY. LOOK ALIVE.</span></footer>
     </main>
   );
 }
