@@ -55,7 +55,7 @@ function App() {
         );
       case 'COUNTDOWN':
         return (
-          <section className="state-panel countdown-panel">
+          <section className="state-panel countdown-panel overlay-state">
             <div className="eyebrow">Lock in your stance</div>
             <div className="countdown-number">{state.countdownValue}</div>
             <h2>Find the frame.</h2>
@@ -64,12 +64,33 @@ function App() {
         );
       case 'PLAYING':
         return (
-          <section className="state-panel playing-panel">
-            <div className="play-topline"><div><div className="eyebrow">Live match</div><h2>Hold that energy.</h2></div><div className="timer"><span>TIME</span>{(state.timeLeftMs / 1000).toFixed(1)}<small>s</small></div></div>
-            <div className="score-readout"><span>POSE MATCH</span><strong>{Math.round(state.liveScore)}<small>%</small></strong></div>
-            <div className="score-track"><div className="score-fill" style={{ width: `${Math.min(100, state.liveScore)}%` }} /></div>
-            <div className="play-hint"><span className="pulse-dot" /> Match the reference. Make it yours.</div>
-            {state.currentMeme && <div className="current-meme"><span>NOW PLAYING</span><strong>{state.currentMeme.title}</strong></div>}
+          <section className="state-panel playing-panel overlay-state">
+            <div className="play-topline">
+              <div>
+                <div className="eyebrow">Live match</div>
+                <h2>Hold that energy.</h2>
+              </div>
+              <div className="timer">
+                <span>TIME</span>
+                {(state.timeLeftMs / 1000).toFixed(1)}<small>s</small>
+              </div>
+            </div>
+            <div className="score-readout">
+              <span>POSE MATCH</span>
+              <strong>{Math.round(state.liveScore)}<small>%</small></strong>
+            </div>
+            <div className="score-track">
+              <div className="score-fill" style={{ width: `${Math.min(100, state.liveScore)}%` }} />
+            </div>
+            <div className="play-hint">
+              <span className="pulse-dot" /> Match the reference. Make it yours.
+            </div>
+            {state.currentMeme && (
+              <div className="current-meme">
+                <span>NOW PLAYING</span>
+                <strong>{state.currentMeme.title}</strong>
+              </div>
+            )}
           </section>
         );
       case 'RESULT':
@@ -90,6 +111,8 @@ function App() {
   };
 
   const liveRound = state.state === 'COUNTDOWN' || state.state === 'PLAYING';
+  // Show overlay only for COUNTDOWN and PLAYING
+  const showOverlay = liveRound;
 
   return (
     <main className="app-shell">
@@ -102,13 +125,63 @@ function App() {
           />
           <span className="brand-name">ISTE meme pose<span> / </span>challenge</span>
         </div>
-      </header>  <section className="arena-grid">
-        <div className="camera-card"><div className="card-label"><span>01 / YOUR CAMERA</span><span className="signal"><i /> LIVE FEED</span></div><div className="camera-frame"><CameraView onLandmarks={handleLandmarks} /><div className="camera-corner camera-corner-tl" /><div className="camera-corner camera-corner-br" /><div className="camera-caption">MIRROR MODE <span>·</span> POSE TRACKING</div></div></div>
-        <aside className="game-column"><div className="control-card"><div className="card-label"><span>02 / GAME CONTROL</span><span className="round-badge">{liveRound ? 'IN PLAY' : state.state}</span></div>{liveRound && state.currentMeme && <div className="reference-card"><div className="reference-heading"><span>REFERENCE FRAME</span><span>⟷</span></div><MemeVideo videoUrl={state.currentMeme.videoUrl} isPlaying /><div className="reference-title">{state.currentMeme.title}</div></div>}{renderGameState()}</div><div className="leaderboard-card"><div className="card-label"><span>03 / THE BOARD</span><span>TOP 100</span></div><Leaderboard limit={10} /></div></aside>
+      </header>
+
+      <section className="arena-grid">
+        {/* Camera card */}
+        <div className="camera-card">
+          <div className="card-label">
+            <span>01 / YOUR CAMERA</span>
+            <span className="signal"><i /> LIVE FEED</span>
+          </div>
+          <div className="camera-frame">
+            <CameraView onLandmarks={handleLandmarks} />
+            <div className="camera-corner camera-corner-tl" />
+            <div className="camera-corner camera-corner-br" />
+            <div className="camera-caption">MIRROR MODE <span>·</span> POSE TRACKING</div>
+          </div>
+          {/* — Game overlay (shows during COUNTDOWN and PLAYING) — */}
+          {showOverlay && (
+            <div className="game-overlay">
+              {renderGameState()}
+            </div>
+          )}
+        </div>
+
+        {/* Side column */}
+        <aside className="game-column">
+          <div className="control-card">
+            <div className="card-label">
+              <span>02 / GAME CONTROL</span>
+              <span className="round-badge">{liveRound ? 'IN PLAY' : state.state}</span>
+            </div>
+            {/* Reference video – visible during COUNTDOWN/PLAYING */}
+            {liveRound && state.currentMeme && (
+              <div className="reference-card">
+                <div className="reference-heading">
+                  <span>REFERENCE FRAME</span>
+                  <span>⟷</span>
+                </div>
+                <MemeVideo videoUrl={state.currentMeme.videoUrl} isPlaying />
+                <div className="reference-title">{state.currentMeme.title}</div>
+              </div>
+            )}
+            {/* State panel – hidden during COUNTDOWN/PLAYING (already shown as overlay) */}
+            {!showOverlay && renderGameState()}
+          </div>
+
+          {/* Leaderboard – always visible */}
+          <div className="leaderboard-card">
+            <div className="card-label">
+              <span>03 / THE BOARD</span>
+              <span>TOP 100</span>
+            </div>
+            <Leaderboard limit={10} />
+          </div>
+        </aside>
       </section>
     </main>
   );
 }
 
 export default App;
-

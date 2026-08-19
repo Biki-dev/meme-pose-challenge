@@ -23,7 +23,13 @@ export const MemeVideo: React.FC<MemeVideoProps> = ({ videoUrl, isPlaying, onEnd
     <video
       ref={videoRef}
       src={videoUrl}
-      style={{ width: '100%', maxWidth: '400px', background: '#000', borderRadius: '8px' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain', // fills the box without cropping
+        borderRadius: '8px',
+        background: '#000', // fallback for letterboxing
+      }}
       loop
       muted
       playsInline
