@@ -6,6 +6,7 @@ import { useGame } from './hooks/useGame';
 import { preloadAllMemes } from './data/memePreloader';
 import type { Meme } from './types/meme';
 import type { LandmarkList } from './types/pose';
+import { Leaderboard } from './components/Leaderboard';
 
 function App() {
   const [memes, setMemes] = useState<Meme[]>([]);
@@ -172,6 +173,9 @@ function App() {
             gap: '1rem',
           }}
         >
+          <div style={{ marginTop: '1rem', borderTop: '1px solid #333', paddingTop: '1rem' }}>
+  <Leaderboard limit={10} />
+</div>
           {/* Meme video – shown during COUNTDOWN and PLAYING */}
           {(state.state === 'COUNTDOWN' || state.state === 'PLAYING') && state.currentMeme && (
             <div style={{ textAlign: 'center' }}>

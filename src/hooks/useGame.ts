@@ -7,6 +7,8 @@ import type { Meme } from '../types/meme';
 import { GAME_CONFIG } from '../game/gameConfig';
 import type { LandmarkList } from '../types/pose';
 import { MemeSelector } from '../game/memeSelector';
+import { saveResult as dbSave } from '../database/api';
+import { enqueueResult } from '../database/offlineQueue';
 
 export function useGame(allMemes: Meme[]) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
@@ -140,10 +142,46 @@ export function useGame(allMemes: Meme[]) {
     liveScoreRef.current = 0;
   }, []);
 
-  const saveResult = useCallback((_finalScore: number) => {
-    // TODO: Phase 6 – save to Supabase
-    setTimeout(() => dispatch({ type: 'SAVE_COMPLETE' }), 500);
-  }, []);
+const saveResult = useCallback(
+  async (finalScore: number) => {
+    if (!state.playerId || !state.currentMeme) {
+      console.error('Missing player or meme');
+      return;
+    }
+    try {
+      const { error } = await dbSave(
+        state.playerId,
+        state.playerName,
+        state.currentMeme.id,
+        finalScore
+      );
+      if (error) {
+        // Queue locally
+        enqueueResult({
+          playerId: state.playerId,
+          playerName: state.playerName,
+          memeId: state.currentMeme.id,
+          score: finalScore,
+          timestamp: Date.now(),
+        });
+        console.warn('Saved to offline queue:', error);
+      }
+    } catch (err) {
+      // Fallback to queue
+      enqueueResult({
+        playerId: state.playerId,
+        playerName: state.playerName,
+        memeId: state.currentMeme.id,
+        score: finalScore,
+        timestamp: Date.now(),
+      });
+      console.warn('Network error, queued locally');
+    }
+    // Always go back to IDLE
+    dispatch({ type: 'SAVE_COMPLETE' });
+  },
+  [state.playerId, state.playerName, state.currentMeme]
+);
 
   return { state, startGame, processFrame, resetGame, saveResult };
 }
